@@ -40,20 +40,20 @@ public class Email {
         this.emailCC = emailCC;
         this.emailBody = emailBody;
         this.state = state;
-        this.updateDate = obtenerFechaHoraActual();
+        this.updateDate = getCurrentDate();
     }
 
     public Email(EmailDTO emailDTO) {
         this.emailId = emailDTO.getEmailId();
-        this.emailFrom = emailDTO.getEmailFrom();
+        this.emailFrom = (emailDTO.getEmailFrom() != null) ? emailDTO.getEmailFrom() : "default_user@gbtec.es";
         this.emailTo = getEmailsString(emailDTO.getEmailTo());
         this.emailCC = getEmailsString(emailDTO.getEmailCC());
-        this.emailBody = emailDTO.getEmailBody();
+        this.emailBody = (emailDTO.getEmailBody() != null) ? emailDTO.getEmailBody() : "";
         this.state = emailDTO.getState();
-        this.updateDate = obtenerFechaHoraActual();
+        this.updateDate = getCurrentDate();
     }
 
-    public static Timestamp obtenerFechaHoraActual() {
+    public static Timestamp getCurrentDate() {
         // Obtiene la fecha y hora actual en milisegundos
         long tiempoMillis = System.currentTimeMillis();
 
@@ -64,21 +64,16 @@ public class Email {
     }
 
     private static String getEmailsString(List<RecipientDTO> emailList) {
-
-        String emailString = emailList.stream()
-                .map(RecipientDTO::getEmail)
-                .collect(Collectors.joining(";"));
+        String emailString;
+        if(emailList != null) {
+            emailString = emailList.stream()
+                    .map(RecipientDTO::getEmail)
+                    .collect(Collectors.joining(";"));
+        } else {
+            emailString = "";
+        }
         return emailString;
     }
-
-//    private static String getEmailCCString(EmailDTO emailDTO) {
-//        List<RecipientDTO> emailCCList = emailDTO.getEmailCC();
-//
-//        String emailCC = emailCCList.stream()
-//                .map(RecipientDTO::getEmail)
-//                .collect(Collectors.joining(";"));
-//        return emailCC;
-//    }
 
     // Getters y setters
 
@@ -138,7 +133,7 @@ public class Email {
         if(updateDate != null) {
             this.updateDate = updateDate;
         } else {
-            this.updateDate = obtenerFechaHoraActual();
+            this.updateDate = getCurrentDate();
         }
     }
 }
