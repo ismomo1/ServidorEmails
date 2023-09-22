@@ -3,6 +3,8 @@ package net.javaguides.springboot.model;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.sql.Timestamp;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name="emails")
@@ -38,11 +40,17 @@ public class Email {
         this.emailCC = emailCC;
         this.emailBody = emailBody;
         this.state = state;
-        if(updateDate != null) {
-            this.updateDate = updateDate;
-        } else {
-            this.updateDate = obtenerFechaHoraActual();
-        }
+        this.updateDate = obtenerFechaHoraActual();
+    }
+
+    public Email(EmailDTO emailDTO) {
+        this.emailId = emailDTO.getEmailId();
+        this.emailFrom = emailDTO.getEmailFrom();
+        this.emailTo = getEmailsString(emailDTO.getEmailTo());
+        this.emailCC = getEmailsString(emailDTO.getEmailCC());
+        this.emailBody = emailDTO.getEmailBody();
+        this.state = emailDTO.getState();
+        this.updateDate = obtenerFechaHoraActual();
     }
 
     public static Timestamp obtenerFechaHoraActual() {
@@ -54,6 +62,23 @@ public class Email {
 
         return fechaHoraActual;
     }
+
+    private static String getEmailsString(List<RecipientDTO> emailList) {
+
+        String emailString = emailList.stream()
+                .map(RecipientDTO::getEmail)
+                .collect(Collectors.joining(";"));
+        return emailString;
+    }
+
+//    private static String getEmailCCString(EmailDTO emailDTO) {
+//        List<RecipientDTO> emailCCList = emailDTO.getEmailCC();
+//
+//        String emailCC = emailCCList.stream()
+//                .map(RecipientDTO::getEmail)
+//                .collect(Collectors.joining(";"));
+//        return emailCC;
+//    }
 
     // Getters y setters
 

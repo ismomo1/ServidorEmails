@@ -3,6 +3,13 @@ package net.javaguides.springboot.model;
 public class RecipientDTO {
     private String email;
 
+    public RecipientDTO() {
+    }
+
+    public RecipientDTO(String email) {
+        this.email = email;
+    }
+
     // Getters y setters
 
     public String getEmail() {
