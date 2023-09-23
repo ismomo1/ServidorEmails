@@ -45,8 +45,7 @@ public class EmailController {
 
     // Endpoint para filtrar por emailFrom
     @GetMapping("/findByEmailFrom")
-    public ResponseEntity<EmailListDTO> getEmailsByEmailFrom(
-            @RequestParam String emailFrom) {
+    public ResponseEntity<EmailListDTO> getEmailsByEmailFrom(@RequestParam String emailFrom) {
         List<Email> emails = emailRepository.findByEmailFrom(emailFrom);
         return getEmailListDTO(emails);
     }
@@ -61,25 +60,21 @@ public class EmailController {
 
     // Endpoint para filtrar por un email contenido en emailCC
     @GetMapping("/findByEmailCC")
-    public ResponseEntity<EmailListDTO> getEmailsByEmailCC(
-            @RequestParam String emailCC) {
+    public ResponseEntity<EmailListDTO> getEmailsByEmailCC(@RequestParam String emailCC) {
         List<Email> emails = emailRepository.findByEmailCCContaining(emailCC);
         return getEmailListDTO(emails);
     }
 
     // Endpoint para filtrar por estado
     @GetMapping("/findByState")
-    public ResponseEntity<EmailListDTO> getEmailsByState(
-            @RequestParam int state) {
+    public ResponseEntity<EmailListDTO> getEmailsByState(@RequestParam int state) {
         List<Email> emails = emailRepository.findByState(state);
         return getEmailListDTO(emails);
     }
 
     // Endpoint para obtener todos los emails de un rango de fechas
     @GetMapping("/findByDateRange")
-    public ResponseEntity<EmailListDTO> getEmailsByDateRange(
-            @RequestParam String startDate,
-            @RequestParam String endDate) throws ParseException {
+    public ResponseEntity<EmailListDTO> getEmailsByDateRange(@RequestParam String startDate, @RequestParam String endDate) throws ParseException {
         Timestamp startDateT = emailService.parseTimestampFromString(startDate);
         Timestamp endDateT = emailService.parseTimestampFromString(endDate);
 
@@ -126,30 +121,37 @@ public class EmailController {
     // Endpoint para crear uno o varios nuevos emails
     @PostMapping
     public ResponseEntity<EmailListDTO> createEmails(@RequestBody EmailListDTO emailListDTO) {
-        List<EmailDTO> createdEmails = new ArrayList<>();
+        List<EmailDTO> createdEmailsDTO = new ArrayList<>();
+        List<EmailDTO> notValidEmailsDTO = new ArrayList<>();
+        List<Email> createdEmails = new ArrayList<>();
 
         if (emailListDTO != null && emailListDTO.getEmails() != null) {
             for (EmailDTO emailDTO : emailListDTO.getEmails()) {
                 Email email = new Email(emailDTO);
                 if(email.getState() < 1 && email.getState() > 4) {
-                    createdEmails.clear();
-                    createdEmails.add(emailDTO);
-                    return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
-                            .body(new EmailListDTO(createdEmails));
+                    notValidEmailsDTO.add(emailDTO);
+                    continue;
                 }
                 if(email.getEmailId() == null || emailRepository.findById(email.getEmailId()).isPresent()) {
-                    createdEmails.clear();
-                    createdEmails.add(emailDTO);
-                    return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
-                            .body(new EmailListDTO(createdEmails));
+                    notValidEmailsDTO.add(emailDTO);
+                    continue;
                 }
 
                 emailRepository.save(email);
-                createdEmails.add(emailDTO);
+                createdEmailsDTO.add(emailDTO);
             }
+        } else {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
-        return ResponseEntity.ok(new EmailListDTO(createdEmails));
+//        emailRepository.saveAll(createdEmails);
+
+        if (notValidEmailsDTO.isEmpty()) {
+            return ResponseEntity.ok(new EmailListDTO(createdEmailsDTO));
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
+                    .body(new EmailListDTO(notValidEmailsDTO));
+        }
     }
 
     // Endpoint para marcar como eliminados uno o varios emails

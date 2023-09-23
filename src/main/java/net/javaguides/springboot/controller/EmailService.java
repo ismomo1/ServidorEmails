@@ -1,9 +1,11 @@
 package net.javaguides.springboot.controller;
 
 import net.javaguides.springboot.model.Email;
+import net.javaguides.springboot.model.EmailState;
 import net.javaguides.springboot.repository.EmailRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.*;
 import jakarta.transaction.*;
@@ -13,6 +15,7 @@ import java.sql.Timestamp;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.stream.Collectors;
 
 @Service
 public class EmailService {
@@ -42,5 +45,12 @@ public class EmailService {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         Date parsedDate = dateFormat.parse(timestampString);
         return new Timestamp(parsedDate.getTime());
+    }
+
+    @Scheduled(cron = "0 0 10 * * *") // Ejecutar todos los días a las 10:00 am
+    public void markCarlEmailsAsSpam() {
+        List<Email> carlEmails = emailRepository.findByEmailFrom("carl@gbtec.es");
+        List<Email> carlSpamEmails = carlEmails.stream().peek(email -> email.setState(EmailState.SPAM.getValue())).toList();
+        emailRepository.saveAll(carlSpamEmails);
     }
 }
