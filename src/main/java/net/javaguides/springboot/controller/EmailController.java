@@ -10,6 +10,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.Timestamp;
+import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -25,19 +27,68 @@ public class EmailController {
         this.emailService = emailService;
     }
 
-    // Endpoint para obtener todos los correos electrónicos
+    // Endpoint para obtener uno o varios emails por id
+    @GetMapping("")
+    public ResponseEntity<EmailListDTO> getEmails(@RequestParam List<Long> ids) {
+        Set<Long> uniqueIds = new HashSet<>(ids);
+        List<Email> emails = emailRepository.findAllById(uniqueIds);
+        return getEmailListDTO(emails);
+    }
+
+    // Endpoint para obtener todos los emails
     @GetMapping("/all")
     public ResponseEntity<EmailListDTO> getAllEmails() {
         List<Email> emails = emailRepository.findAll();
-
-        List<EmailDTO> emailDTOs = emails.stream()
-                .map(EmailDTO::new)
-                .collect(Collectors.toList());
-
+        List<EmailDTO> emailDTOs = getEmailDTOS(emails);
         return ResponseEntity.ok(new EmailListDTO(emailDTOs));
     }
 
-    // Endpoint para obtener un correo por id
+    // Endpoint para filtrar por emailFrom
+    @GetMapping("/findByEmailFrom")
+    public ResponseEntity<EmailListDTO> getEmailsByEmailFrom(
+            @RequestParam String emailFrom) {
+        List<Email> emails = emailRepository.findByEmailFrom(emailFrom);
+        return getEmailListDTO(emails);
+    }
+
+    // Endpoint para filtrar por un email contenido en emailTo
+    @GetMapping("/findByEmailTo")
+    public ResponseEntity<EmailListDTO> getEmailsByEmailTo(
+            @RequestParam String emailTo) {
+        List<Email> emails = emailRepository.findByEmailToContaining(emailTo);
+        return getEmailListDTO(emails);
+    }
+
+    // Endpoint para filtrar por un email contenido en emailCC
+    @GetMapping("/findByEmailCC")
+    public ResponseEntity<EmailListDTO> getEmailsByEmailCC(
+            @RequestParam String emailCC) {
+        List<Email> emails = emailRepository.findByEmailCCContaining(emailCC);
+        return getEmailListDTO(emails);
+    }
+
+    // Endpoint para filtrar por estado
+    @GetMapping("/findByState")
+    public ResponseEntity<EmailListDTO> getEmailsByState(
+            @RequestParam int state) {
+        List<Email> emails = emailRepository.findByState(state);
+        return getEmailListDTO(emails);
+    }
+
+    // Endpoint para obtener todos los emails de un rango de fechas
+    @GetMapping("/findByDateRange")
+    public ResponseEntity<EmailListDTO> getEmailsByDateRange(
+            @RequestParam String startDate,
+            @RequestParam String endDate) throws ParseException {
+        Timestamp startDateT = emailService.parseTimestampFromString(startDate);
+        Timestamp endDateT = emailService.parseTimestampFromString(endDate);
+
+        List<Email> emails = emailRepository.findByUpdateDateBetween(startDateT, endDateT);
+
+        return getEmailListDTO(emails);
+    }
+
+    // Endpoint para obtener un email por id
 //    @GetMapping("/{id}")
 //    public ResponseEntity<EmailDTO> getEmail(@PathVariable Long id) {
 //        Optional<Email> emailOptional = emailRepository.findById(id);
@@ -51,24 +102,7 @@ public class EmailController {
 //        }
 //    }
 
-    // Endpoint para obtener uno o varios correos por id
-    @GetMapping("")
-    public ResponseEntity<EmailListDTO> getEmails(@RequestParam List<Long> ids) {
-        Set<Long> uniqueIds = new HashSet<>(ids);
-
-        List<Email> emails = emailRepository.findAllById(uniqueIds);
-
-        if (!emails.isEmpty()) {
-            List<EmailDTO> emailDTOs = emails.stream()
-                    .map(EmailDTO::new)
-                    .collect(Collectors.toList());
-            return ResponseEntity.ok(new EmailListDTO(emailDTOs));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-//    // Endpoint para crear un nuevo correo electrónico
+//    // Endpoint para crear un nuevo email
 //    @PostMapping
 //    public ResponseEntity<EmailDTO> createEmail(@RequestBody EmailDTO emailDTO) {
 //        Email email = new Email(emailDTO);
@@ -89,6 +123,7 @@ public class EmailController {
 //        return ResponseEntity.ok(emailDTO);
 //    }
 
+    // Endpoint para crear uno o varios nuevos emails
     @PostMapping
     public ResponseEntity<EmailListDTO> createEmails(@RequestBody EmailListDTO emailListDTO) {
         List<EmailDTO> createdEmails = new ArrayList<>();
@@ -117,60 +152,25 @@ public class EmailController {
         return ResponseEntity.ok(new EmailListDTO(createdEmails));
     }
 
-    // Endpoint para marcar como eliminados uno o varios correos electrónicos
+    // Endpoint para marcar como eliminados uno o varios emails
     @PutMapping("/deletedState")
     public ResponseEntity<EmailListDTO> setDeletedState(@RequestParam List<Long> ids) {
         return setEmailStateByID(ids, EmailState.ELIMINADO);
     }
 
-    // Endpoint para marcar como enviado uno o varios correos en estado borrador
+    // Endpoint para marcar como enviado uno o varios emails en estado borrador
     @PutMapping("/sentState")
     public ResponseEntity<EmailListDTO> setSentState(@RequestParam List<Long> ids) {
         return setEmailStateByID(ids, EmailState.ENVIADO, EmailState.BORRADOR);
     }
 
-    // Endpoint para marcar como spam uno o varios correos electrónicos
+    // Endpoint para marcar como spam uno o varios emails
     @PutMapping("/spamState")
     public ResponseEntity<EmailListDTO> setSpamState(@RequestParam List<Long> ids) {
         return setEmailStateByID(ids, EmailState.SPAM);
     }
 
-    private ResponseEntity<EmailListDTO> setEmailStateByID(List<Long> ids, EmailState setEmailState) {
-        Set<Long> uniqueIds = new HashSet<>(ids);
-
-        List<Email> emails = emailRepository.findAllById(uniqueIds);
-
-        if (!emails.isEmpty()) {
-            List<EmailDTO> emailDTOs = emails.stream()
-                    .peek(email -> email.setState(setEmailState.getValue()))
-                    .map(EmailDTO::new)
-                    .collect(Collectors.toList());
-            emailRepository.saveAll(emails);
-            return ResponseEntity.ok(new EmailListDTO(emailDTOs));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-    private ResponseEntity<EmailListDTO> setEmailStateByID(List<Long> ids, EmailState setEmailState, EmailState filterEmailState) {
-        Set<Long> uniqueIds = new HashSet<>(ids);
-
-        List<Email> emails = emailRepository.findAllById(uniqueIds);
-        emails = emails.stream().filter(email -> email.getState() == filterEmailState.getValue()).collect(Collectors.toList());
-
-        if (!emails.isEmpty()) {
-            List<EmailDTO> emailDTOs = emails.stream()
-                    .peek(email -> email.setState(setEmailState.getValue()))
-                    .map(EmailDTO::new)
-                    .collect(Collectors.toList());
-            emailRepository.saveAll(emails);
-            return ResponseEntity.ok(new EmailListDTO(emailDTOs));
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
-
-//    // Endpoint para marcar como enviado un borrador de un correo electrónico
+//    // Endpoint para marcar como enviado un borrador de un email
 //    @PutMapping("send/{id}")
 //    public ResponseEntity<EmailDTO> sendEmail(@PathVariable Long id) {
 //        Optional<Email> emailOptional = emailRepository.findById(id);
@@ -190,7 +190,7 @@ public class EmailController {
 //        return ResponseEntity.ok(new EmailDTO(emailRepository.save(existingEmail)));
 //    }
 
-    // Endpoint para actualizar un correo electrónico existente (To,CC,Body)
+    // Endpoint para actualizar un borrador de un email existente (To,CC,Body)
     @PutMapping("/{id}")
     public ResponseEntity<EmailDTO> updateEmail(@PathVariable Long id, @RequestBody EmailDTO updatedEmailDTO) {
         Optional<Email> emailOptional = emailRepository.findById(id);
@@ -245,17 +245,84 @@ public class EmailController {
         }
     }
 
-    // Endpoint para eliminar un correo electrónico
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEmail(@PathVariable Long id) {
-        emailRepository.deleteById(id);
-        return ResponseEntity.noContent().build();
+//    // Endpoint para eliminar un email de base de datos
+//    @DeleteMapping("/{id}")
+//    public ResponseEntity<Void> deleteEmail(@PathVariable Long id) {
+//        emailRepository.deleteById(id);
+//        return ResponseEntity.noContent().build();
+//    }
+
+    // Endpoint para eliminar uno o varios emails de base de datos
+    @DeleteMapping("")
+    public ResponseEntity<EmailListDTO> deleteEmails(@RequestParam List<Long> ids) {
+        Set<Long> uniqueIds = new HashSet<>(ids);
+
+        List<Email> emails = emailRepository.findAllById(uniqueIds);
+
+        if (!emails.isEmpty()) {
+            List<EmailDTO> emailDTOs = getEmailDTOS(emails);
+            emailRepository.deleteAllById(ids);
+            return ResponseEntity.ok(new EmailListDTO(emailDTOs));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    // Endpoint para eliminar todos los correos
+    // Endpoint para eliminar todos los emails de base de datos
     @DeleteMapping("/deleteAll")
     public ResponseEntity<Void> deleteAllEmails() {
         emailRepository.deleteAll();
         return ResponseEntity.noContent().build();
+    }
+
+    private static List<EmailDTO> getEmailDTOS(List<Email> emails) {
+        List<EmailDTO> emailDTOs = emails.stream()
+                .map(EmailDTO::new)
+                .collect(Collectors.toList());
+        return emailDTOs;
+    }
+
+    private static ResponseEntity<EmailListDTO> getEmailListDTO(List<Email> emails) {
+        if (!emails.isEmpty()) {
+            List<EmailDTO> emailDTOs = getEmailDTOS(emails);
+            return ResponseEntity.ok(new EmailListDTO(emailDTOs));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    private ResponseEntity<EmailListDTO> setEmailStateByID(List<Long> ids, EmailState setEmailState) {
+        Set<Long> uniqueIds = new HashSet<>(ids);
+
+        List<Email> emails = emailRepository.findAllById(uniqueIds);
+
+        if (!emails.isEmpty()) {
+            List<EmailDTO> emailDTOs = emails.stream()
+                    .peek(email -> email.setState(setEmailState.getValue()))
+                    .map(EmailDTO::new)
+                    .collect(Collectors.toList());
+            emailRepository.saveAll(emails);
+            return ResponseEntity.ok(new EmailListDTO(emailDTOs));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    private ResponseEntity<EmailListDTO> setEmailStateByID(List<Long> ids, EmailState setEmailState, EmailState filterEmailState) {
+        Set<Long> uniqueIds = new HashSet<>(ids);
+
+        List<Email> emails = emailRepository.findAllById(uniqueIds);
+        emails = emails.stream().filter(email -> email.getState() == filterEmailState.getValue()).collect(Collectors.toList());
+
+        if (!emails.isEmpty()) {
+            List<EmailDTO> emailDTOs = emails.stream()
+                    .peek(email -> email.setState(setEmailState.getValue()))
+                    .map(EmailDTO::new)
+                    .collect(Collectors.toList());
+            emailRepository.saveAll(emails);
+            return ResponseEntity.ok(new EmailListDTO(emailDTOs));
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

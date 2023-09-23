@@ -1,11 +1,18 @@
 package net.javaguides.springboot.controller;
 
+import net.javaguides.springboot.model.Email;
 import net.javaguides.springboot.repository.EmailRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.*;
 import jakarta.transaction.*;
+
+import java.util.List;
+import java.sql.Timestamp;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 @Service
 public class EmailService {
@@ -29,5 +36,11 @@ public class EmailService {
         }
 
         return maxId;
+    }
+
+    public static Timestamp parseTimestampFromString(String timestampString) throws ParseException {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        Date parsedDate = dateFormat.parse(timestampString);
+        return new Timestamp(parsedDate.getTime());
     }
 }
