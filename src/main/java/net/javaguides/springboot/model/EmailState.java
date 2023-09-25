@@ -1,6 +1,7 @@
 package net.javaguides.springboot.model;
 
 public enum EmailState {
+    ESTADO_NO_VÁLIDO(0),
     ENVIADO(1),
     BORRADOR(2),
     ELIMINADO(3),

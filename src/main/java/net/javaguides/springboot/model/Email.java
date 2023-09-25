@@ -45,7 +45,7 @@ public class Email {
 
     public Email(EmailDTO emailDTO) {
         this.emailId = emailDTO.getEmailId();
-        this.emailFrom = (emailDTO.getEmailFrom() != null) ? emailDTO.getEmailFrom() : "default_user@gbtec.es";
+        this.emailFrom = (emailDTO.getEmailFrom() != null) ? emailDTO.getEmailFrom() : "";
         this.emailTo = getEmailsString(emailDTO.getEmailTo());
         this.emailCC = getEmailsString(emailDTO.getEmailCC());
         this.emailBody = (emailDTO.getEmailBody() != null) ? emailDTO.getEmailBody() : "";
