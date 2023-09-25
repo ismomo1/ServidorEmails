@@ -1,4 +1,4 @@
-package net.javaguides.springboot.model;
+package net.gbtec.pruebatecnicabackend.model;
 
 public enum EmailState {
     ESTADO_NO_VÁLIDO(0),

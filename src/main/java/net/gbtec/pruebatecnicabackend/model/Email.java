@@ -1,4 +1,4 @@
-package net.javaguides.springboot.model;
+package net.gbtec.pruebatecnicabackend.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;

@@ -1,4 +1,4 @@
-package net.javaguides.springboot.model;
+package net.gbtec.pruebatecnicabackend.model;
 
 public class RecipientDTO {
     private String email;

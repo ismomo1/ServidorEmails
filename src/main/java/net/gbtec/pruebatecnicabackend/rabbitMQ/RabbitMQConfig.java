@@ -1,4 +1,4 @@
-package net.javaguides.springboot.rabbitMQ;
+package net.gbtec.pruebatecnicabackend.rabbitMQ;
 
 import org.springframework.amqp.core.Queue;
 import org.springframework.context.annotation.Bean;

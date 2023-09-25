@@ -1,6 +1,6 @@
-package net.javaguides.springboot.repository;
+package net.gbtec.pruebatecnicabackend.repository;
 
-import net.javaguides.springboot.model.EmailListDTO;
+import net.gbtec.pruebatecnicabackend.model.EmailListDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 

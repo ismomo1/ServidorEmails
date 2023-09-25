@@ -1,4 +1,4 @@
-package net.javaguides.springboot.rabbitMQ;
+package net.gbtec.pruebatecnicabackend.rabbitMQ;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;

@@ -1,19 +1,23 @@
-package net.javaguides.springboot.controller;
+package net.gbtec.pruebatecnicabackend.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import net.javaguides.springboot.model.Email;
-import net.javaguides.springboot.model.EmailDTO;
-import net.javaguides.springboot.model.EmailListDTO;
-import net.javaguides.springboot.model.EmailState;
-import net.javaguides.springboot.repository.EmailRepository;
+import net.gbtec.pruebatecnicabackend.model.Email;
+import net.gbtec.pruebatecnicabackend.model.EmailDTO;
+import net.gbtec.pruebatecnicabackend.model.EmailListDTO;
+import net.gbtec.pruebatecnicabackend.model.EmailState;
+import net.gbtec.pruebatecnicabackend.rabbitMQ.MessageProducer;
+import net.gbtec.pruebatecnicabackend.repository.EmailRepository;
 
-import net.javaguides.springboot.repository.EmailServiceClient;
+import net.gbtec.pruebatecnicabackend.repository.EmailServiceClient;
+import org.springframework.amqp.AmqpException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.*;
 import jakarta.transaction.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.List;
@@ -29,12 +33,15 @@ public class EmailService {
     private final EmailRepository emailRepository;
     private final EntityManager entityManager;
     private final EmailServiceClient emailServiceClient;
+    private final MessageProducer messageProducer;
+    private static final Logger log = LoggerFactory.getLogger(EmailController.class);
 
     @Autowired
-    public EmailService(EmailRepository emailRepository, EntityManager entityManager, EmailServiceClient emailServiceClient) {
+    public EmailService(EmailRepository emailRepository, EntityManager entityManager, EmailServiceClient emailServiceClient, MessageProducer messageProducer) {
         this.emailRepository = emailRepository;
         this.entityManager = entityManager;
         this.emailServiceClient = emailServiceClient;
+        this.messageProducer = messageProducer;
     }
 
     public List<Email> getAllEmails() {
@@ -140,6 +147,14 @@ public class EmailService {
         } catch (Exception e) {
             e.printStackTrace();
             return null;
+        }
+    }
+
+    public void rabbitMQmessage(String message) {
+        try {
+            messageProducer.sendMessage("\n" + message);
+        } catch (AmqpException ex) {
+            log.warn("Error al interactuar con RabbitMQ: " + ex.getMessage());
         }
     }
 }

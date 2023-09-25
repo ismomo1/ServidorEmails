@@ -1,6 +1,6 @@
-package net.javaguides.springboot.repository;
+package net.gbtec.pruebatecnicabackend.repository;
 
-import net.javaguides.springboot.model.Email;
+import net.gbtec.pruebatecnicabackend.model.Email;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
